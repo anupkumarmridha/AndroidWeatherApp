@@ -66,8 +66,9 @@ dependencies {
     implementation (libs.converter.gson) // Gson converter
     implementation (libs.logging.interceptor) // Logging for debugging
 
-    implementation(libs.androidx.lifecycle.viewmodel.ktx)
+//    implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation (libs.androidx.fragment.ktx)
+    implementation("androidx.hilt:hilt-navigation-compose:1.0.0")
 
 }
 
