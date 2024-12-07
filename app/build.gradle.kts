@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     id("kotlin-kapt")
     id("com.google.dagger.hilt.android")
+    id("kotlinx-serialization")
 
 }
 
@@ -69,6 +70,8 @@ dependencies {
 //    implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation (libs.androidx.fragment.ktx)
     implementation("androidx.hilt:hilt-navigation-compose:1.0.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
+    implementation("com.jakewharton.retrofit:retrofit2-kotlinx-serialization-converter:1.0.0")
 
 }
 

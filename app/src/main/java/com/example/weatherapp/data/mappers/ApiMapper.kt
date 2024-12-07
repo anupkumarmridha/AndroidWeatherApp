@@ -1,4 +1,5 @@
 package com.example.weatherapp.data.mappers
 
-class ApiMapper {
+interface ApiMapper<Domain, Entity> {
+    fun mapToDomain(apiEntity: Entity): Domain
 }
