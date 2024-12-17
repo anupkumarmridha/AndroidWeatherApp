@@ -57,6 +57,14 @@ object MapperModule {
 
 }
 
+
+//Since ApiMapper is a generic interface, multiple implementations are created for different model pairs
+// (e.g., Daily -> ApiDailyWeather, CurrentWeather -> ApiCurrentWeather).
+//By using qualifiers:
+
+//You distinguish between the different implementations of the same generic type.
+//Hilt can resolve which implementation to inject where required.
+
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class ApiDailyMapperAnnotation
@@ -75,3 +83,5 @@ annotation class ApiCurrentWeatherMapperAnnotation
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class ApiHourlyWeatherMapperAnnotation
+
+
