@@ -21,6 +21,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -45,7 +46,7 @@ fun HomeScreen(
     weatherViewModel: WeatherViewModel = hiltViewModel() // Inject WeatherViewModel
 ) {
     // Convert the StateFlow into a State for Compose to observe
-    val homeState = weatherViewModel.state.collectAsState()
+    val homeState by weatherViewModel.state.collectAsState()
 
     // Request location permissions
     RequestLocationPermissions(
@@ -66,50 +67,57 @@ fun HomeScreen(
             .padding(16.dp),
         contentAlignment = Alignment.Center
     ) {
-        when {
-            homeState.value.isLoading -> {
-                // Show a loading indicator when data is being fetched
+        when (homeState.isLoading) {
+            true -> {
+                // Show a loading indicator
                 CircularProgressIndicator()
-            }
-
-            homeState.value.weather != null -> {
-                // Safely access weather object
-                val weather = homeState.value.weather!!
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.TopCenter),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    // Display current weather item
-                    CurrentWeatherItem(currentWeather = weather.currentWeather)
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text(
-                        text = homeState.value.searchLocation ?: "Unknown Location",
-                        style = MaterialTheme.typography.headlineMedium,
-                    )
-                }
-
-                // Display hourly weather
-                HourlyWeatherItem(
-                    hourly = weather.hourly,
-                    modifier = Modifier.align(Alignment.BottomCenter)
-                )
             }
 
             else -> {
-                CircularProgressIndicator()
-                // Show an error or empty state message
-                Text(
-                    text = homeState.value.error ?: "No data available",
-                    style = MaterialTheme.typography.bodyMedium,
-                )
+                // Show the weather data
+                homeState.weather?.let {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .align(Alignment.TopCenter),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        CurrentWeatherItem(
+                            currentWeather = it.currentWeather,
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = homeState.searchLocation ?: "Unknown Location",
+                            style = MaterialTheme.typography.headlineMedium,
+                        )
+                    }
+
+                    HourlyWeatherItem(
+                        hourly = it.hourly,
+                        modifier = Modifier.align(Alignment.BottomCenter)
+                    )
+                }
+
+                homeState.dailyWeatherInfo?.let {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        SunSetWeatherItem(weatherInfo = it)
+                        UvIndexWeatherItem(weatherInfo = it)
+                    }
+                }
+
+
             }
+
         }
+
     }
 }
+
 
 
 @Composable
