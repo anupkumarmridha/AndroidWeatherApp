@@ -10,8 +10,8 @@ interface WeatherApi {
 
     @GET(K.END_POINT)
     suspend fun getWeatherData(
-        @Query(ApiParameters.LATITUDE) latitude: Float = 13.0878f,
-        @Query(ApiParameters.LONGITUDE) longitude: Float = 80.2785f,
+        @Query(ApiParameters.LATITUDE) latitude: Float,
+        @Query(ApiParameters.LONGITUDE) longitude: Float,
         @Query(ApiParameters.DAILY) daily:Array<String> = arrayOf(
             "weather_code",
             "temperature_2m_max",

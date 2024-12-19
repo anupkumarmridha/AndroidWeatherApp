@@ -1,5 +1,6 @@
 package com.example.weatherapp.ui.home
 
+import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,7 +21,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -31,9 +31,10 @@ import com.example.weatherapp.R
 import com.example.weatherapp.domain.model.CurrentWeather
 import com.example.weatherapp.domain.model.Daily
 import com.example.weatherapp.domain.model.Hourly
+import com.example.weatherapp.ui.components.RequestLocationPermissions
 import com.example.weatherapp.utils.Util
 import com.example.weatherapp.utils.WeatherInfoItem
-import com.example.weatherapp.viewmodel.HomeViewModel
+import com.example.weatherapp.viewmodel.WeatherViewModel
 import java.util.Date
 
 const val degreeTxt = "°"
@@ -41,65 +42,72 @@ const val degreeTxt = "°"
 @Composable
 fun HomeScreen(
     modifier: Modifier = Modifier,
-    homeViewModel: HomeViewModel = hiltViewModel()
+    weatherViewModel: WeatherViewModel = hiltViewModel() // Inject WeatherViewModel
 ) {
-//    val homeState = homeViewModel.homeState
-    val homeState by WeatherStore.stateFlow.collectAsState()
+    // Convert the StateFlow into a State for Compose to observe
+    val homeState = weatherViewModel.state.collectAsState()
 
+    // Request location permissions
+    RequestLocationPermissions(
+        onPermissionsGranted = {
+            Log.d("HomeScreen", "Permissions granted")
+            weatherViewModel.fetchLocationDetails() // Fetch location details when permission is granted
+        },
+        onPermissionsDenied = {
+            println("Error: Permissions denied") // Handle permission denial
+            Log.d("HomeScreen", "Permissions denied")
+        }
+    )
+
+    // Build the UI based on the state
     Box(
         modifier = modifier
             .fillMaxSize()
             .padding(16.dp),
         contentAlignment = Alignment.Center
     ) {
-        when (homeState.isLoading) {
-            true -> {
-                // Show a loading indicator
+        when {
+            homeState.value.isLoading -> {
+                // Show a loading indicator when data is being fetched
                 CircularProgressIndicator()
             }
 
-            else -> {
-                // Show the weather data
-                homeState.weather?.let {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .align(Alignment.TopCenter),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        CurrentWeatherItem(
-                            currentWeather = it.currentWeather,
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "Chennai", // Location text below the weather item
-                            style = MaterialTheme.typography.headlineMedium,
-                        )
-                    }
+            homeState.value.weather != null -> {
+                // Safely access weather object
+                val weather = homeState.value.weather!!
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.TopCenter),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // Display current weather item
+                    CurrentWeatherItem(currentWeather = weather.currentWeather)
 
-                    HourlyWeatherItem(
-                        hourly = it.hourly,
-                        modifier = Modifier.align(Alignment.BottomCenter)
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = homeState.value.searchLocation ?: "Unknown Location",
+                        style = MaterialTheme.typography.headlineMedium,
                     )
                 }
 
-                homeState.dailyWeatherInfo?.let {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        SunSetWeatherItem(weatherInfo = it)
-                        UvIndexWeatherItem(weatherInfo = it)
-                    }
-                }
-
-
+                // Display hourly weather
+                HourlyWeatherItem(
+                    hourly = weather.hourly,
+                    modifier = Modifier.align(Alignment.BottomCenter)
+                )
             }
 
+            else -> {
+                CircularProgressIndicator()
+                // Show an error or empty state message
+                Text(
+                    text = homeState.value.error ?: "No data available",
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
         }
-
     }
 }
 

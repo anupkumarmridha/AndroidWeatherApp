@@ -5,5 +5,5 @@ import com.example.weatherapp.utils.Response
 import kotlinx.coroutines.flow.Flow
 
 interface WeatherRepository {
-    fun getWeatherData(): Flow<Response<Weather>>
+    fun getWeatherData(latitude: Float, longitude: Float): Flow<Response<Weather>>
 }

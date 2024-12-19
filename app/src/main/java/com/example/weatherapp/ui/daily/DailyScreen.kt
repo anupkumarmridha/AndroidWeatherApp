@@ -34,17 +34,17 @@ import com.example.weatherapp.R
 import com.example.weatherapp.domain.model.Daily
 import com.example.weatherapp.ui.home.SunSetWeatherItem
 import com.example.weatherapp.ui.home.UvIndexWeatherItem
-import com.example.weatherapp.viewmodel.DailyViewModel
+import com.example.weatherapp.viewmodel.WeatherViewModel
 
 const val degreeTxt = "°"
 
 @Composable
 fun DailyScreen(
     modifier: Modifier = Modifier,
-    dailyViewModel: DailyViewModel = hiltViewModel(),
+    weatherViewModel: WeatherViewModel = hiltViewModel()
 )
 {
-    val dailyState by WeatherStore.stateFlow.collectAsState()
+    val dailyState by weatherViewModel.state.collectAsState()
 
 
     var selectedWeatherIndex by remember { mutableIntStateOf(0) }
@@ -81,7 +81,7 @@ fun DailyScreen(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Chennai",
+                    text = dailyState.searchLocation ?: "Unknown Location",
                     style = MaterialTheme.typography.headlineMedium,
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
