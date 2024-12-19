@@ -1,8 +1,8 @@
 package com.example.weatherapp.ui.home
 
+import WeatherSearchBar
 import android.util.Log
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -25,6 +25,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -55,66 +56,83 @@ fun HomeScreen(
             weatherViewModel.fetchLocationDetails() // Fetch location details when permission is granted
         },
         onPermissionsDenied = {
-            println("Error: Permissions denied") // Handle permission denial
-            Log.d("HomeScreen", "Permissions denied")
+            Log.e("HomeScreen", "Permissions denied") // Log error for denied permission
         }
     )
 
-    // Build the UI based on the state
-    Box(
+    Column(
         modifier = modifier
             .fillMaxSize()
             .padding(16.dp),
-        contentAlignment = Alignment.Center
+        verticalArrangement = Arrangement.SpaceBetween // Distribute elements with space between
     ) {
-        when (homeState.isLoading) {
-            true -> {
-                // Show a loading indicator
-                CircularProgressIndicator()
-            }
+        // Spacer for additional margin at the top
+        Spacer(modifier = Modifier.height(16.dp))
 
-            else -> {
-                // Show the weather data
-                homeState.weather?.let {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .align(Alignment.TopCenter),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        CurrentWeatherItem(
-                            currentWeather = it.currentWeather,
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = homeState.searchLocation ?: "Unknown Location",
-                            style = MaterialTheme.typography.headlineMedium,
-                        )
-                    }
+        // Add the SearchBar
+        WeatherSearchBar(
+            onSearch = { query ->
+                weatherViewModel.searchLocation(query) // Trigger search in ViewModel
+            },
+            modifier = Modifier.fillMaxWidth()
+        )
 
-                    HourlyWeatherItem(
-                        hourly = it.hourly,
-                        modifier = Modifier.align(Alignment.BottomCenter)
-                    )
-                }
+        // Display Weather Content
+        homeState.weather?.let { weather ->
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                // Current Weather
+                CurrentWeatherItem(currentWeather = weather.currentWeather)
+                Spacer(modifier = Modifier.height(8.dp))
 
-                homeState.dailyWeatherInfo?.let {
+                // Location Text
+                Text(
+                    text = homeState.searchLocation ?: "Unknown Location",
+                    style = MaterialTheme.typography.headlineMedium,
+                    textAlign = TextAlign.Center
+                )
+
+                // Daily Weather Info (Sunset, UV Index)
+                homeState.dailyWeatherInfo?.let { dailyWeather ->
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(top = 16.dp),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        SunSetWeatherItem(weatherInfo = it)
-                        UvIndexWeatherItem(weatherInfo = it)
+                        SunSetWeatherItem(weatherInfo = dailyWeather)
+                        UvIndexWeatherItem(weatherInfo = dailyWeather)
                     }
                 }
-
-
             }
-
+        } ?: run {
+            // Show Loading or Error if Weather Data is Not Available
+            if (homeState.isLoading) {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+            } else {
+                Text(
+                    text = "Unable to load weather data",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.error,
+                    textAlign = TextAlign.Center
+                )
+            }
         }
 
+        Spacer(modifier = Modifier.height(16.dp))
+        // Hourly Weather
+        homeState.weather?.hourly?.let { hourlyWeather ->
+            HourlyWeatherItem(
+                hourly = hourlyWeather,
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp)) // Spacer for Bottom Margin
     }
 }
 
@@ -128,31 +146,31 @@ fun CurrentWeatherItem(
     // Display the current weather
 
     Column(
-        modifier=modifier,
+        modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
-        ){
+    ) {
         Icon(
             painter = painterResource(id = currentWeather.weatherStatus.icon),
             contentDescription = null,
             modifier = Modifier.size(120.dp)
         )
-        Spacer(modifier=Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = "${currentWeather.temperature}$degreeTxt",
             style = MaterialTheme.typography.displayMedium,
         )
-        Spacer(modifier=Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(4.dp))
         Text(
             text = currentWeather.weatherStatus.info,
             style = MaterialTheme.typography.bodyLarge,
         )
-        Spacer(modifier=Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(4.dp))
         Text(
             text = "Wind: ${currentWeather.windSpeed} km/h",
             style = MaterialTheme.typography.bodyMedium,
         )
-        Spacer(modifier=Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(4.dp))
         Text(
             text = currentWeather.time,
             style = MaterialTheme.typography.bodyMedium,
@@ -167,9 +185,9 @@ fun HourlyWeatherItem(
     hourly: Hourly,
 ) {
     // Display the hourly weather
-    Card (modifier=modifier.fillMaxWidth()){
+    Card(modifier = modifier.fillMaxWidth()) {
         Row(
-            modifier=Modifier
+            modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween
@@ -188,7 +206,7 @@ fun HourlyWeatherItem(
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
         // Display the hourly weather data
-        LazyRow(modifier=Modifier.padding(16.dp)) {
+        LazyRow(modifier = Modifier.padding(16.dp)) {
             items(hourly.weatherInfo) { infoItem ->
                 HourlyWeatherInfoItem(infoItem = infoItem)
             }
@@ -203,7 +221,7 @@ fun HourlyWeatherInfoItem(
 ) {
     // Display the hourly weather info
     Column(
-        modifier=modifier.padding(8.dp),
+        modifier = modifier.padding(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -275,7 +293,6 @@ fun UvIndexWeatherItem(modifier: Modifier = Modifier, weatherInfo: Daily.Weather
 }
 
 
-
 @Preview(showBackground = true)
 @Composable
 fun HomeScreenPreview() {
@@ -299,9 +316,6 @@ fun HomeScreenPreview() {
     )
     CurrentWeatherItem(currentWeather = dummyCurrentWeather)
 }
-
-
-
 
 
 @Preview(showBackground = true)
