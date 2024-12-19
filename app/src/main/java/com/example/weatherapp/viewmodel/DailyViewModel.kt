@@ -1,59 +1,49 @@
 package com.example.weatherapp.viewmodel
-
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.weatherapp.domain.model.Daily
 import com.example.weatherapp.domain.repository.WeatherRepository
+import com.example.weatherapp.redux.WeatherAction
 import com.example.weatherapp.utils.Response
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
 
 @HiltViewModel
 class DailyViewModel @Inject constructor(
     private val repository: WeatherRepository
 ) : ViewModel() {
 
-    var dailyState by mutableStateOf(DailyState())
-        private set
-
     init {
+        fetchDailyWeatherData()
+    }
+
+    private fun fetchDailyWeatherData() {
         viewModelScope.launch {
-            repository.getWeatherData().collect { response ->
-                when (response) {
-                    is Response.Loading -> {
-                        dailyState = dailyState.copy(
-                            isLoading = true
-                        )
-                    }
-
-                    is Response.Success -> {
-                        dailyState = dailyState.copy(
-                            isLoading = false,
-                            daily = response.data?.daily,
-                            error = null
-                        )
-                    }
-
-                    is Response.Error -> {
-                        dailyState = dailyState.copy(
-                            isLoading = false,
-                            error = response.message
-                        )
+            try {
+                // Dispatch loading action initially
+                WeatherStore.dispatch(WeatherAction.Loading)
+                repository.getWeatherData().collect { response ->
+                    when (response) {
+                        is Response.Loading -> {
+                            // Dispatch loading action when Response.Loading is emitted
+                            WeatherStore.dispatch(WeatherAction.Loading)
+                        }
+                        is Response.Success -> {
+                            // Dispatch success action with data
+                            WeatherStore.dispatch(WeatherAction.Success(response.data))
+                        }
+                        is Response.Error -> {
+                            // Dispatch error action with message
+                            WeatherStore.dispatch(WeatherAction.Error(response.message))
+                        }
                     }
                 }
+            } catch (e: Exception) {
+                // Dispatch error action for exceptions
+                WeatherStore.dispatch(WeatherAction.Error(e.message ?: "Unknown error"))
             }
         }
     }
-
-
 }
 
-data class DailyState(
-    val daily: Daily? = null,
-    val error: String? = null,
-    val isLoading: Boolean = false
-)

@@ -18,6 +18,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
@@ -43,10 +44,12 @@ fun DailyScreen(
     dailyViewModel: DailyViewModel = hiltViewModel(),
 )
 {
-    val dailyState=dailyViewModel.dailyState
+    val dailyState by WeatherStore.stateFlow.collectAsState()
+
+
     var selectedWeatherIndex by remember { mutableIntStateOf(0) }
-    val currentDailyWeatherItem = remember (key1 = selectedWeatherIndex, key2 = dailyState ) {
-        dailyState.daily?.weatherInfo?.get(selectedWeatherIndex)
+    val currentDailyWeatherItem = remember(key1 = selectedWeatherIndex, key2 = dailyState) {
+        dailyState.weather?.daily?.weatherInfo?.getOrNull(selectedWeatherIndex)
     }
 
     Column(
@@ -84,7 +87,7 @@ fun DailyScreen(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 LazyRow {
-                    dailyState.daily?.let { daily ->
+                    dailyState.weather?.daily?.let { daily ->
                         itemsIndexed(items = daily.weatherInfo) { index, weatherInfo ->
                             val selectedColor =
                                 if (selectedWeatherIndex == index) MaterialTheme.colorScheme.inverseSurface
